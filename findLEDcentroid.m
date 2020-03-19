@@ -1,36 +1,54 @@
+function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
 
-function [centroidLocs, BigestCentro, meanCentro] = findLEDcentroid(bw) 
- meanCentro = []; 
+pnames = {'mergeThresh','connectivity'};
+dflts  = {[],8};
+[mergeThresh,conn] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
-CC = bwconncomp(bw, 8); % find connected regions (everything that is near a pixl (8 options))
-Props = regionprops(CC); % regionprops is the function that gives us centorides and such 
-centroidLocs = round((cat(1,Props.Centroid))); % store centroids for use using cat function to put them together. also round them as they represent a pixel  
-[areamax indexmax]  = max(max(cat(1,Props.Area))); % store areas of centroides 
- 
-% find biggest area centorid 
-if areamax >= 5
-    BigestCentro(1,1) = centroidLocs(indexmax,1); 
-    BigestCentro(1,2) = centroidLocs(indexmax,2);
-else
-       BigestCentro = [];
+labelIm = bwlabel(bw,conn); % find connected regions (everything that is near a pixl (8 options))
+props = regionprops(logical(labelIm)); % regionprops is the function that gives us centorides and such
+centroidLocs = round(vertcat(props.Centroid)); % store centroids for use using cat function to put them together. also round them as they represent a pixel
+
+% merge close by centrodis
+if size(centroidLocs,1) > 1 && ~isempty(mergeThresh)
+    [centroidLocs,props,labelIm]  = mergeCentroids(labelIm,mergeThresh);
+    usedIdx = ~all(isnan(centroidLocs),2);
+    centroidLocs = centroidLocs(usedIdx,:);
+    props = props(props);
 end
 
-% merge close by centrodis 
-if size(centroidLocs,1) > 1 
+end
+
+function [centroidLocs,props,labelIm] = mergeCentroids(labelIm,mergeThresh)
+
+props = regionprops(labelIm); % regionprops is the function that gives us centorides and such
+centroidLocs = round(vertcat(props.Centroid)); % store centroids for use using cat function to put them together. also round them as they represent a pixel
+
+D = pdist(centroidLocs);
+D = squareform(D);
+
+mergeIdx = D < mergeThresh;
+mergeIdx(logical(eye(size(mergeIdx)))) = false;
+[row,col] = find(mergeIdx);
+
+if length(row) > 1
+    mergePairs = [row col];
+    mergePairs = sort(mergePairs,2);
+    mergePairs = unique(mergePairs,'rows');
     
-if (max(abs(diff(centroidLocs(:,1)))) < 250) && (max(abs(diff(centroidLocs(:,2)))) < 250) 
-        meanCentro(1,1) = mean(centroidLocs(:,1));
-        meanCentro(1,2) = mean(centroidLocs(:,2));
+    n_merge_pairs = size(mergePairs,1);
+    mergeDist = zeros(1,n_merge_pairs);
+    for pair_k = 1:n_merge_pairs
+        mergeDist(pair_k) = D(mergePairs(pair_k,1),mergePairs(pair_k,2));
+    end
+    
+    [~,min_dist_idx] = min(mergeDist);
+    min_dist_pair = mergePairs(min_dist_idx,:);
+    labelIm(labelIm == min_dist_pair(2)) = min_dist_pair(1);
+    
+    [centroidLocs,props,labelIm] = mergeCentroids(labelIm,mergeThresh);
+    
 else
-    meanCentro = []; 
-end 
+    return
 end
-end 
 
-
-
-% if centroidLocs > 1
-% clusters = rangesearch(centroidLocs,centroidLocs,250,'SortIndices',false); % this gives indexes of nearby centorids
-% clusters = unique(cell2mat(clusters),'rows'); % this turns cell to mat and removes duplicates of clustre
-% clustredCentro = mean(centroidLocs((clusters)));
-% end
+end
