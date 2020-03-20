@@ -32,9 +32,10 @@ end
 usedIdx = [props.Area] > minArea;
 centroidLocs = centroidLocs(usedIdx,:);
 props = props(usedIdx);
-imLabels = setdiff(unique(labelIm(:)),0)';
+imLabels = labelIm(labelIm~=0);
+imLabels = setdiff(unique(imLabels(:)),0)';
 for k = imLabels(~usedIdx)
-   labelIm(labelIm == k) = 0; 
+    labelIm(labelIm == k) = 0;
 end
 
 end

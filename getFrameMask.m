@@ -37,10 +37,16 @@ if isempty(hsvLims)
     end
     bw = f > thresh;
 else
-    bw = createMaskFilter(f,hsvLims);
+    if ~any(hsvLims{1}(1,1,:) > hsvLims{2}(1,1,:))
+        bw = all(f >= hsvLims{1} & f <= hsvLims{2},3);
+    else
+        bw = ( (f(:,:,1) >= hsvLims{1}(1,1,1)) | (f(:,:,1) <= hsvLims{2}(1,1,1)) ) &...
+            (f(:,:,2) >= hsvLims{1}(1,1,2) ) & (f(:,:,2) <= hsvLims{2}(1,1,2)) &...
+            (f(:,:,3) >= hsvLims{1}(1,1,3) ) & (f(:,:,3) <= hsvLims{2}(1,1,3));
+    end
 end
 
-SE = strel('disk',strel_radius); % define circular "structural element"
+SE = strel('rectangle',repmat(strel_radius,1,2)); % define circular "structural element"
 bw = imclose(bw,SE); % remove gaps in mask 
 
 end
