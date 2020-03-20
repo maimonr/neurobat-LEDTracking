@@ -1,4 +1,15 @@
-function framegrab(v,varargin) % this  funciton takes the frame number and
+function framegrab(v,varargin) 
+% function to send to videofig that determines the regions in an image and
+% plots them along with their centroids.
+% INPUTS: 
+% v: videoReader of the video of interest
+% hsvLims: a 3 x 2 matrix defining the lower (first column) and upper
+% (second column) bounds for each of the 3 channels in HSV color that
+% determines what is included in the mask
+% frameNum: the desired frame number (or leave empty to read the next
+% frame)
+% plot_mean_cent: flag for whether to plot the mean of all centroids
+% plot_biggest_centroid: flag for whether to plot the biggest centroid
 
 pnames = {'hsvLims','frameNum','plot_mean_cent','plot_biggest_cent'};
 dflts  = {[],[],true,true};

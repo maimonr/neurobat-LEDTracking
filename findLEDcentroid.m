@@ -1,5 +1,18 @@
 function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
 
+% find the centroids of the connected region(s) in a binary image mask and
+% merge close-by regions if requested.
+% INPUTS:
+% bw: binary mask of an image (h x w)
+% mergeThresh: number of pixels below which nearby regions are recursively
+% merged. Leave empty if merging is not requested.
+% connectivity: input for function bwlabel, should probably leave at 8
+% OUTPUTS:
+% centroidLocs: location (in pixels) of centroids of region(s) in bw
+% props: regionprops output regarding the region(s) in bw
+% labelIm: image mask of the same size as bw with each region labeled as a
+% unique number
+
 pnames = {'mergeThresh','connectivity'};
 dflts  = {[],8};
 [mergeThresh,conn] = internal.stats.parseArgs(pnames,dflts,varargin{:});
