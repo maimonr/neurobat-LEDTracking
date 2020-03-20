@@ -13,9 +13,9 @@ function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
 % labelIm: image mask of the same size as bw with each region labeled as a
 % unique number
 
-pnames = {'mergeThresh','connectivity'};
-dflts  = {[],8};
-[mergeThresh,conn] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'mergeThresh','connectivity','minArea'};
+dflts  = {[],8,50};
+[mergeThresh,conn,minArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 labelIm = bwlabel(bw,conn); % find connected regions (everything that is near a pixl (8 options))
 props = regionprops(logical(labelIm)); % regionprops is the function that gives us centorides and such
@@ -27,6 +27,14 @@ if size(centroidLocs,1) > 1 && ~isempty(mergeThresh)
     usedIdx = ~all(isnan(centroidLocs),2);
     centroidLocs = centroidLocs(usedIdx,:);
     props = props(usedIdx);
+end
+
+usedIdx = [props.Area] > minArea;
+centroidLocs = centroidLocs(usedIdx,:);
+props = props(usedIdx);
+imLabels = setdiff(unique(labelIm(:)),0)';
+for k = imLabels(~usedIdx)
+   labelIm(labelIm == k) = 0; 
 end
 
 end

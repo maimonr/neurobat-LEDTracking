@@ -8,7 +8,8 @@ function bw = getFrameMask(f,varargin)
 % (second column) bounds for each of the 3 channels in HSV color that
 % determines what is included in the mask
 % ROI: Region of interest as a rectangle within the image defined as:
-%      [firstRow lastRow firstColumn lastColumn]
+%      [firstRow lastRow firstColumn lastColumn], all pixels outside of ROI
+%      are set to NaN. Leave blank to consider entire image.
 % fixed_thresh: the fraction of the range of the intensity values in f over
 % which is considered to be included in the mask (only used if hsvLims is
 % empty)
@@ -21,11 +22,11 @@ pnames = {'hsvLims','ROI','fixed_thresh','strel_radius'};
 dflts  = {[],[],0.1,10};
 [hsvLims,ROI,fixed_thresh,strel_radius] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
-if isempty(ROI) % If no ROI is defined, use entire image
-   ROI = [1 size(f,1) 1 size(f,2)]; 
+if ~isempty(ROI) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero
+   ROIIdx = true(size(f));
+   ROIIdx(ROI(1):ROI(2),ROI(3):ROI(4),:) = false;
+   f(ROIIdx) = NaN;
 end
-
-f = f(ROI(1):ROI(2),ROI(3):ROI(4),:);
 
 if isempty(hsvLims)
     f = rgb2gray(f); % if no HSV lim is defined, determine threshold based on grayscale intensity values
