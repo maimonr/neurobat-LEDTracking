@@ -7,6 +7,7 @@ function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
 % mergeThresh: number of pixels below which nearby regions are recursively
 % merged. Leave empty if merging is not requested.
 % connectivity: input for function bwlabel, should probably leave at 8
+% minArea: minimum area for an region to be considered
 % OUTPUTS:
 % centroidLocs: location (in pixels) of centroids of region(s) in bw
 % props: regionprops output regarding the region(s) in bw

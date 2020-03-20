@@ -23,9 +23,9 @@ dflts  = {[],[],0.1,10};
 [hsvLims,ROI,fixed_thresh,strel_radius] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if ~isempty(ROI) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero
-   ROIIdx = true(size(f));
-   ROIIdx(ROI(1):ROI(2),ROI(3):ROI(4),:) = false;
-   f(ROIIdx) = NaN;
+    ROIIdx = true(size(f));
+    ROIIdx(ROI(1):ROI(2),ROI(3):ROI(4),:) = false;
+    f(ROIIdx) = NaN;
 end
 
 if isempty(hsvLims)
@@ -37,16 +37,20 @@ if isempty(hsvLims)
     end
     bw = f > thresh;
 else
-    if ~any(hsvLims{1}(1,1,:) > hsvLims{2}(1,1,:))
-        bw = all(f >= hsvLims{1} & f <= hsvLims{2},3);
+    if iscell(hsvLims)
+        if ~any(hsvLims{1}(1,1,:) > hsvLims{2}(1,1,:))
+            bw = all(f >= hsvLims{1} & f <= hsvLims{2},3);
+        else
+            bw = ( (f(:,:,1) >= hsvLims{1}(1,1,1)) | (f(:,:,1) <= hsvLims{2}(1,1,1)) ) &...
+                (f(:,:,2) >= hsvLims{1}(1,1,2) ) & (f(:,:,2) <= hsvLims{2}(1,1,2)) &...
+                (f(:,:,3) >= hsvLims{1}(1,1,3) ) & (f(:,:,3) <= hsvLims{2}(1,1,3));
+        end
     else
-        bw = ( (f(:,:,1) >= hsvLims{1}(1,1,1)) | (f(:,:,1) <= hsvLims{2}(1,1,1)) ) &...
-            (f(:,:,2) >= hsvLims{1}(1,1,2) ) & (f(:,:,2) <= hsvLims{2}(1,1,2)) &...
-            (f(:,:,3) >= hsvLims{1}(1,1,3) ) & (f(:,:,3) <= hsvLims{2}(1,1,3));
+        bw = createMaskFilter(f,hsvLims);
     end
 end
 
 SE = strel('rectangle',repmat(strel_radius,1,2)); % define circular "structural element"
-bw = imclose(bw,SE); % remove gaps in mask 
+bw = imclose(bw,SE); % remove gaps in mask
 
 end
