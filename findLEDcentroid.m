@@ -30,7 +30,7 @@ mergeIdx = D < mergeThresh;
 mergeIdx(logical(eye(size(mergeIdx)))) = false;
 [row,col] = find(mergeIdx);
 
-if length(row) > 1
+if ~isempty(row)
     mergePairs = [row col];
     mergePairs = sort(mergePairs,2);
     mergePairs = unique(mergePairs,'rows');
