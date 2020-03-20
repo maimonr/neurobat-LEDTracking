@@ -13,7 +13,7 @@ if size(centroidLocs,1) > 1 && ~isempty(mergeThresh)
     [centroidLocs,props,labelIm]  = mergeCentroids(labelIm,mergeThresh);
     usedIdx = ~all(isnan(centroidLocs),2);
     centroidLocs = centroidLocs(usedIdx,:);
-    props = props(props);
+    props = props(usedIdx);
 end
 
 end
