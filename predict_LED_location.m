@@ -1,5 +1,5 @@
-function [centroidLocs, predColors, props] = predict_LED_location(f,varargin)
-
+function [centroidLocs, predColors, props, predPosterior] = predict_LED_location(f,varargin)
+%#codegen
 % take a frame from a video, (optionally) filter by preset color ranges,
 % find regions of color, and predict based on a pre-trained classifier the
 % color in the image.
@@ -64,7 +64,7 @@ if exist('colorspace','file')
 else
     fLab = rgb2lab(f);
 end
-[centroidLocs,predColors,props] = deal(cell(1,n_hsv_colors));
+[centroidLocs,predColors,props,predPosterior] = deal(cell(1,n_hsv_colors));
 
 for color_k = 1:n_hsv_colors
     [centroidLocs{color_k}, props{color_k}, labelIm] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
@@ -81,18 +81,19 @@ for color_k = 1:n_hsv_colors
             color_mat(k,:) = squeeze(median(fLab(row,col,2:3),[1 2])); % take the median a and b values for those pixels
             k = k + 1;
         end
-        color_table = table(color_mat(:,1),color_mat(:,2)); % convert to table to feed into prediction function
-        [predColors{color_k},predPosterior] = color_pred_model.predictFcn(color_table); % predict which color based on median pixel a and b values
+        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationDiscriminant,color_mat); % predict which color based on median pixel a and b values
         if length(regionLabels) == 1 && n_hsv_colors > 1 % if there's only one region in this filtered image, use it
             predColors{color_k} = predColors{color_k}{1}; 
         elseif n_hsv_colors > 1 % if there's more than one region in this filtered image, select the one with the highest posterior probability
-            [~,max_posterior_idx] = max(predPosterior,[],'all','linear');
-            [row,~] = ind2sub(size(predPosterior),max_posterior_idx);          
+            [~,max_posterior_idx] = max(predPosterior{color_k},[],'all','linear');
+            [row,~] = ind2sub(size(predPosterior{color_k}),max_posterior_idx);          
             centroidLocs{color_k} = centroidLocs{color_k}(row,:);
             props{color_k} = props{color_k}(row,:);
             predColors{color_k} = predColors{color_k}{row};
+            predPosterior{color_k} = predPosterior{color_k}{row};
         else % if we're not color filtering, use all predicted colors
             predColors = predColors{1};
+            predPosterior = predPosterior{1};
         end
     end
 end
