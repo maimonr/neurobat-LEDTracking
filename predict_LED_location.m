@@ -1,5 +1,5 @@
 function [centroidLocs, predColors, props, predPosterior] = predict_LED_location(f,varargin)
-%#codegen
+
 % take a frame from a video, (optionally) filter by preset color ranges,
 % find regions of color, and predict based on a pre-trained classifier the
 % color in the image.

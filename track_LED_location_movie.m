@@ -1,5 +1,5 @@
 function [centroidLocs, predColors, props, predPosterior] = track_LED_location_movie(baseDir,video_fName)
-v = VideoReader(fullfile(baseDir,'video',video_fName));
+v = VideoReader(fullfile(baseDir,video_fName));
 frame_k = 1;
 nFrame = ceil(v.frameRate*v.Duration);
 [centroidLocs, predColors, props, predPosterior] = deal(cell(1,nFrame));
