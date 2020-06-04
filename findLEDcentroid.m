@@ -19,7 +19,7 @@ dflts  = {[],8,50};
 [mergeThresh,conn,minArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 labelIm = bwlabel(bw,conn); % find connected regions (everything that is near a pixl (8 options))
-props = regionprops(bw,{'Area','Centroid'}); % regionprops is the function that gives us centroids and area
+props = regionprops(bw,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centroids and area
 centroidLocs = round(vertcat(props.Centroid)); % round centroids to pixel values
 
 % merge close by centrodis
@@ -43,7 +43,7 @@ end
 
 function [centroidLocs,props,labelIm] = mergeCentroids(labelIm,mergeThresh)
 
-props = regionprops(labelIm,{'Area','Centroid'}); % regionprops is the function that gives us centorides and such
+props = regionprops(labelIm,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centorides and such
 centroidLocs = round(vertcat(props.Centroid)); % store centroids for use using cat function to put them together. also round them as they represent a pixel
 
 D = pdist(centroidLocs);

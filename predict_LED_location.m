@@ -12,6 +12,7 @@ function [centroidLocs, predColors, props, predPosterior] = predict_LED_location
 % mergeThresh: number of pixels below which nearby regions are recursively
 % merged. Leave empty if merging is not requested.
 % minArea: minimum area for an region to be considered
+% maxArea: maximum area above which, blob splitting is attempted
 % color_pred_model: prediction model using a and b of L*a*b color space
 % (output from matlab's ClassificationLearner)
 % ROI: Region of interest as a rectangle within the image defined as:
@@ -25,9 +26,9 @@ function [centroidLocs, predColors, props, predPosterior] = predict_LED_location
 % props: regionprops output regarding the region(s) in bw
  
 
-pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI'};
-dflts  = {[],20,20,30,[],[]};
-[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea'};
+dflts  = {[],20,20,30,[],[],200};
+[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if isempty(color_pred_model)
     try 
@@ -60,14 +61,20 @@ else
 end
 
 if exist('colorspace','file')
-    fLab = colorspace('Lab<-rgb',im2double(f)); % this function is much faster than the native matlab code
+    labFunc = @(frame) colorspace('Lab<-rgb',im2double(frame)); % this function is much faster than the native matlab code
 else
-    fLab = rgb2lab(f);
+    labFunc = @rgb2lab;
 end
 [centroidLocs,predColors,props,predPosterior] = deal(cell(1,n_hsv_colors));
 
 for color_k = 1:n_hsv_colors
     [centroidLocs{color_k}, props{color_k}, labelIm] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
+    if any([props{color_k}.Area] > maxArea)
+        fGray = rgb2gray(f);
+        bw{color_k} = split_blobs(fGray,bw{color_k},props{color_k},maxArea);
+        [centroidLocs{color_k}, props{color_k}, labelIm] = findLEDcentroid(bw{color_k},'mergeThresh',[],'minArea',minArea);
+    end
+    
     color_mat = nan(length(props{color_k}),2); % pre allocated array for median color values in each region
     
     regionLabels = labelIm(labelIm~=0); % prepare to iterate through each region detected in findLEDCentroid
@@ -76,9 +83,15 @@ for color_k = 1:n_hsv_colors
         k = 1;
         for region_k = regionLabels
             regionIdx = labelIm == region_k;
-            regionIdx = regionIdx & fLab(:,:,1) > minLum; % select pixels in this region that have at least minLum level of luminance
             [row,col] = find(regionIdx);
-            color_mat(k,:) = squeeze(median(fLab(row,col,2:3),[1 2])); % take the median a and b values for those pixels
+            regionRGB = zeros(length(row),3,'uint8');
+            for pixel_k = 1:length(row)
+               regionRGB(pixel_k,:) = f(row(pixel_k),col(pixel_k),:);
+            end
+            regionLab = labFunc(regionRGB);
+            regionLab = regionLab(regionLab(:,1) > minLum,:);
+            color_mat(k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
+            
             k = k + 1;
         end
         [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationDiscriminant,color_mat); % predict which color based on median pixel a and b values
@@ -94,7 +107,27 @@ for color_k = 1:n_hsv_colors
         else % if we're not color filtering, use all predicted colors
             predColors = predColors{1};
             predPosterior = predPosterior{1};
+            centroidLocs = centroidLocs{1};
         end
     end
 end
+end
+
+function bw = split_blobs(fGray,bw,props,maxArea)
+smoothSpan = 16;
+K = (1/smoothSpan )*ones(smoothSpan);
+blobIdx = [props.Area] > maxArea;
+
+for blob_k = find(blobIdx)    
+    bb = round(props(blob_k).BoundingBox);
+    bbIdx = {bb(2):bb(2)+bb(4),bb(1):bb(1)+bb(3)};
+    imChunk = fGray(bbIdx{1},bbIdx{2});
+    bwChunk = bw(bbIdx{1},bbIdx{2});
+    IMSmooth = conv2(imChunk,K,'same');
+    L = watershed(-IMSmooth);
+    L(~bwChunk) = 0;
+    
+    bw(bb(2):bb(2)+bb(4),bb(1):bb(1)+bb(3)) = L~=0;
+end
+
 end

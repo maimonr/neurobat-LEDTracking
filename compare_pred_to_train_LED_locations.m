@@ -74,5 +74,5 @@ for frame_k = 1:n_train_frames
         p1 = [p1(2:end) p1_current];
         p2 = [p2(2:end) p2_current];
     end
-    pause(0.02)
+    pause(0.05)
 end
