@@ -45,7 +45,9 @@ fHsv = rgb2hsv(f);
 
 if ~isempty(ROIIdx) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero. do this just once to save on performance
     ROI = true(size(f));
-    ROI(ROIIdx(1):ROIIdx(2),ROIIdx(3):ROIIdx(4),:) = false;
+    for roi_k = 1:size(ROIIdx,1)
+        ROI(ROIIdx(roi_k,1):ROIIdx(roi_k,2),ROIIdx(roi_k,3):ROIIdx(roi_k,4),:) = false;
+    end
     f(ROI) = NaN;
 end
 
@@ -68,31 +70,23 @@ end
 [centroidLocs,predColors,props,predPosterior] = deal(cell(1,n_hsv_colors));
 
 for color_k = 1:n_hsv_colors
-    [centroidLocs{color_k}, props{color_k}, labelIm] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
+    [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
     if any([props{color_k}.Area] > maxArea)
         fGray = rgb2gray(f);
         bw{color_k} = split_blobs(fGray,bw{color_k},props{color_k},maxArea);
-        [centroidLocs{color_k}, props{color_k}, labelIm] = findLEDcentroid(bw{color_k},'mergeThresh',[],'minArea',minArea);
+        [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',[],'minArea',minArea);
     end
-    
     color_mat = nan(length(props{color_k}),2); % pre allocated array for median color values in each region
     
-    regionLabels = labelIm(labelIm~=0); % prepare to iterate through each region detected in findLEDCentroid
-    regionLabels = setdiff(unique(regionLabels(:)),0)';
+    regionLabels = 1:cc.NumObjects; % prepare to iterate through each region detected in findLEDCentroid
     if ~isempty(regionLabels)
-        k = 1;
         for region_k = regionLabels
-            regionIdx = labelIm == region_k;
-            [row,col] = find(regionIdx);
-            regionRGB = zeros(length(row),3,'uint8');
-            for pixel_k = 1:length(row)
-               regionRGB(pixel_k,:) = f(row(pixel_k),col(pixel_k),:);
-            end
+            regionIdx = cc.PixelIdxList{region_k};
+            f = reshape(f,[],3);
+            regionRGB = f(regionIdx,:);
             regionLab = labFunc(regionRGB);
             regionLab = regionLab(regionLab(:,1) > minLum,:);
-            color_mat(k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
-            
-            k = k + 1;
+            color_mat(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
         end
         [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationDiscriminant,color_mat); % predict which color based on median pixel a and b values
         if length(regionLabels) == 1 && n_hsv_colors > 1 % if there's only one region in this filtered image, use it

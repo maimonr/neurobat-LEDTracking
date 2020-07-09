@@ -1,4 +1,4 @@
-function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
+function [centroidLocs,props,cc] = findLEDcentroid(bw,varargin)
 
 % find the centroids of the connected region(s) in a binary image mask and
 % merge close-by regions if requested.
@@ -17,14 +17,13 @@ function [centroidLocs,props,labelIm] = findLEDcentroid(bw,varargin)
 pnames = {'mergeThresh','connectivity','minArea'};
 dflts  = {[],8,50};
 [mergeThresh,conn,minArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
-
-labelIm = bwlabel(bw,conn); % find connected regions (everything that is near a pixl (8 options))
-props = regionprops(bw,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centroids and area
+cc = bwconncomp(bw,conn);% find connected regions
+props = regionprops(cc,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centroids and area
 centroidLocs = round(vertcat(props.Centroid)); % round centroids to pixel values
 
 % merge close by centrodis
 if size(centroidLocs,1) > 1 && ~isempty(mergeThresh)
-    [centroidLocs,props,labelIm]  = mergeCentroids(labelIm,mergeThresh);
+    [centroidLocs,props,cc]  = mergeCentroids(cc,mergeThresh);
     usedIdx = ~all(isnan(centroidLocs),2);
     centroidLocs = centroidLocs(usedIdx,:);
     props = props(usedIdx);
@@ -33,17 +32,14 @@ end
 usedIdx = [props.Area] > minArea;
 centroidLocs = centroidLocs(usedIdx,:);
 props = props(usedIdx);
-imLabels = labelIm(labelIm~=0);
-imLabels = setdiff(unique(imLabels(:)),0)';
-for k = imLabels(~usedIdx)
-    labelIm(labelIm == k) = 0;
-end
+cc.PixelIdxList = cc.PixelIdxList(usedIdx);
+cc.NumObjects = length(cc.PixelIdxList);
 
 end
 
-function [centroidLocs,props,labelIm] = mergeCentroids(labelIm,mergeThresh)
+function [centroidLocs,props,cc] = mergeCentroids(cc,mergeThresh)
 
-props = regionprops(labelIm,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centorides and such
+props = regionprops(cc,{'Area','Centroid','BoundingBox'}); % regionprops is the function that gives us centorides and such
 centroidLocs = round(vertcat(props.Centroid)); % store centroids for use using cat function to put them together. also round them as they represent a pixel
 
 D = pdist(centroidLocs);
@@ -66,9 +62,11 @@ if ~isempty(row)
     
     [~,min_dist_idx] = min(mergeDist);
     min_dist_pair = mergePairs(min_dist_idx,:);
-    labelIm(labelIm == min_dist_pair(2)) = min_dist_pair(1);
+    cc.NumObjects = cc.NumObjects - 1;
+    cc.PixelIdxList{min_dist_pair(1)} = vertcat(cc.PixelIdxList{min_dist_pair});
+    cc.PixelIdxList(min_dist_pair(2)) = [];
     
-    [centroidLocs,props,labelIm] = mergeCentroids(labelIm,mergeThresh);
+    [centroidLocs,props,cc] = mergeCentroids(cc,mergeThresh);
     
 else
     return
