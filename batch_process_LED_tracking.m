@@ -1,4 +1,4 @@
-function [centroidLocs, predColors, props, predPosterior, predLab, t2] = batch_process_LED_tracking(videoDir)
+function [centroidLocs, predColors, props, predPosterior, predLab, t2] = batch_process_LED_tracking(videoDir,LEDtrackingParams)
 
 video_fNames = dir(fullfile(videoDir,'*.mp4'));
 nVideo = length(video_fNames);
@@ -27,7 +27,7 @@ parfor video_k = 1:nVideo
         if sum(f,'all') < lightsTh 
             f = undistortFisheyeImage(f, cameraParams.Intrinsics);
         [centroidLocs{video_k}{frame_k}, predColors{video_k}{frame_k}, props{video_k}{frame_k}, predPosterior{video_k}{frame_k},predLab{video_k}{frame_k}] =...
-            predict_LED_location(f,'ROI',ROIIdx,'color_pred_model',color_pred_model);
+            predict_LED_location(f,'ROI',ROIIdx,'color_pred_model',color_pred_model,'params',LEDtrackingParams);
              
         else 
             %FramesWith_LightsOn(video_k) = FramesWith_LightsOn+1 

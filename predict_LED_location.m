@@ -26,10 +26,17 @@ function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED
 % props: regionprops output regarding the region(s) in bw
  
 
-pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea'};
-dflts  = {[],5,10,10,[],[],200};
-[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params'};
+dflts  = {[],5,10,10,[],[],200,[]};
+[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
+if ~isempty(params) 
+ minLum = params.minLum; 
+ mergeThresh = params.mergeThresh; 
+ minArea = params.minArea;
+ maxArea = params.maxArea; 
+end 
+ 
 if isempty(color_pred_model)
     try 
         s = load('color_prediction_model');
@@ -55,7 +62,7 @@ if ~isempty(hsvTable) % if provided, create a binary mask for each color filter
     n_hsv_colors = size(hsvTable,2);
     bw = cell(1,n_hsv_colors);
     for color_k = 1:n_hsv_colors
-        bw{color_k} = getFrameMask(fHsv,'hsvLims',hsvTable{:,color_k}); 
+        bw{color_k} = getFrameMask(fHsv,'hsvLims',hsvTable{:,color_k},'params',params); 
     end
 else
     n_hsv_colors = 1;
