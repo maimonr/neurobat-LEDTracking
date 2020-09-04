@@ -1,6 +1,9 @@
 
 function [Predcition_HealthCheck] = pred_healthCheck(centroidLocs,predColors,predPosterior,props,videoDir,varargin) 
-% This function cacl. estimaitons for the preformance of the LED prediction from a given day 
+% This function is still being made ready. its not for use Maimon!  
+
+
+%This function cacl. estimaitons for the preformance of the LED prediction from a given day 
 %INPUTS: 
 % (1) centroidLocs,predColors,predPosterior,props: the results of
 % predict_LED_predict. 
