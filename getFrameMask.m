@@ -19,7 +19,7 @@ function bw = getFrameMask(f,varargin)
 % bw: binary mask of pixels that pass the user defined threshold(s)
 
 pnames = {'hsvLims','ROI','fixed_thresh','strel_radius'};
-dflts  = {[],[],0.1,10};
+dflts  = {[],[],0.05,10};
 [hsvLims,ROI,fixed_thresh,strel_radius] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if ~isempty(ROI) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero

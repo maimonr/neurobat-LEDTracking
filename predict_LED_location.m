@@ -1,4 +1,4 @@
-function [centroidLocs, predColors, props, predPosterior] = predict_LED_location(f,varargin)
+function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED_location(f,varargin)
 
 % take a frame from a video, (optionally) filter by preset color ranges,
 % find regions of color, and predict based on a pre-trained classifier the
@@ -27,7 +27,7 @@ function [centroidLocs, predColors, props, predPosterior] = predict_LED_location
  
 
 pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea'};
-dflts  = {[],20,20,30,[],[],200};
+dflts  = {[],5,10,10,[],[],200};
 [hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if isempty(color_pred_model)
@@ -67,7 +67,7 @@ if exist('colorspace','file')
 else
     labFunc = @rgb2lab;
 end
-[centroidLocs,predColors,props,predPosterior] = deal(cell(1,n_hsv_colors));
+[centroidLocs,predColors,props,predPosterior, predLab] = deal(cell(1,n_hsv_colors));
 
 for color_k = 1:n_hsv_colors
     [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
@@ -102,6 +102,7 @@ for color_k = 1:n_hsv_colors
             predColors = predColors{1};
             predPosterior = predPosterior{1};
             centroidLocs = centroidLocs{1};
+            predLab = color_mat; 
         end
     end
 end
