@@ -88,7 +88,7 @@ for color_k = 1:n_hsv_colors
             regionLab = regionLab(regionLab(:,1) > minLum,:);
             color_mat(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
         end
-        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationDiscriminant,color_mat); % predict which color based on median pixel a and b values
+        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationSVM  ,color_mat); % predict which color based on median pixel a and b values
         if length(regionLabels) == 1 && n_hsv_colors > 1 % if there's only one region in this filtered image, use it
             predColors{color_k} = predColors{color_k}{1}; 
         elseif n_hsv_colors > 1 % if there's more than one region in this filtered image, select the one with the highest posterior probability
