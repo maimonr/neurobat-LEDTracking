@@ -1,34 +1,29 @@
 
-function [Predcition_HealthCheck] = pred_healthCheck(centroidLocs,predColors,predPosterior,props,videoDir,varargin) 
-% This function is still being made ready. its not for use Maimon!  
+function  pred_healthCheck(predDir) 
+  
+files = dir(predDir);
+files = files(3:end); % get rid of 'wildcard' entries, idk what they are fuck'em 
+
+for FileNum = 1:size(files,1)
+    currentFile = files(FileNum).name;
+    load([predDir,'\',currentFile]);
 
 
-%This function cacl. estimaitons for the preformance of the LED prediction from a given day 
-%INPUTS: 
-% (1) centroidLocs,predColors,predPosterior,props: the results of
-% predict_LED_predict. 
-% (2) model: the prediction model object, loaded to the predict_LED. needed for getting meta data on the prediction.     
-% (3) plot: optional plotting of the resutls. displayed on if 'ture'.  % (4) JumpTh: pixel 
-% ...
-% OUTPUTS: 
-
-pnames = {'model','plot','JumpTh'};
-dflts  = {[];'true',15};
-[plot,JumpTh] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 % prepare some things:
-color_names = color_pred_model.ClassificationSVM.ClassNames;    % should be this: {'az','ch','gr','or','rd','re','sp','vi'}' 
+
+load('color_pred_model_august'); 
+color_names = color_pred_model_august.ClassificationSVM.ClassNames;    % should be this: {'az','ch','gr','or','rd','re','sp','vi'}' 
 numberOfcolors = size(color_names,1); 
 pred_more_then_once = zeros(1,8);  
 Numofblobs_all =[];
+Lab_all = [];
 
 % (1) Remove times when a color is predicted more then once by taking only the max posterior predcition blob. 
-% also, add up the number of blobs for each frame.  
- 
-
+% and also count up the number of blobs 
 for MovieNum = 2:size(centroidLocs,2) 
     for frame_k = 1:size(centroidLocs{1,MovieNum},2)  
-     Numofblobs(frame_k) = size(cell2mat(centroidLocs{1,MovieNum}(frame_k)),1); % just add the blobs up 
+    Numofblobs{frame_k} = size(cell2mat(centroidLocs{1,MovieNum}(frame_k)),1); 
         for color_k = 1:numberOfcolors 
         current_color_idx = strcmp(predColors{MovieNum}{frame_k},color_names{color_k}); 
             if sum(current_color_idx) > 1 
@@ -51,32 +46,61 @@ for MovieNum = 2:size(centroidLocs,2)
         end
     end
     Day_prediction(MovieNum) = {pred_centroids}; 
-    Numofblobs_all = cat(2, Numofblobs_all, Numofblobs); % add blobs from this movie to other movies
+    Numofblobs_all = cat(2,Numofblobs_all,Numofblobs); 
 end 
+Numofblobs_all = cell2mat(Numofblobs_all); 
 
-% (2) now, for fun, we arrange the x-y loocations over time, and calc. also how many missed frames we have for each color  
- 
-for MovieNum = 1:size(centroidLocs,2)   
+% (2) Here we convert La*b* blob cells to one long matrix, and downsample to plot  
+
+Lab = cat(2,predLab{:}); % puts all the cells in predLab to one dim
+Lab = Lab(~cellfun('isempty',Lab)); % get rid of the empty cells so we can combine it to a matrix
+Lab = cat(1,Lab{:}); % combine it to a matrix
+%we want to downsmaple, but first randomize entries (so we don't undersample a specific color)
+Lab_RIndex = randperm(size(Lab,1))'; 
+Lab_RIndex5 = downsample(Lab_RIndex,5); 
+tic
+for i= 1:size(Lab_RIndex5,1)
+    LabRand(i,:)=Lab(Lab_RIndex5(i),:);  
+end 
+toc 
+
+
+
+% (3)number of predicted frames per movie
+for MovieNum = 2:size(Day_prediction,2)
 predicted = cell2mat(Day_prediction(MovieNum));
-for color_index = 1:nColor 
-xP(:,color_index) = predicted(:,color_index,1);  
-yP(:,color_index) = predicted(:,color_index,2);  
-Number_pred(color_index) = nnz(~isnan(xP(:,color_index)));
-end
-xP_all = cat(1,xP_all,xP);
-yP_all = cat(1,yP_all,yP);
-predictedFrames = cat(1, predictedFrames,Number_pred); 
-Number_pred = []; xP = []; yP = [];
-end
-
+for color_index = 1:numberOfcolors
+NumPredFrames(MovieNum,color_index) = sum(~isnan(predicted(:,color_index,1)));
+end 
+end 
 
 
  
 %% Ploting the Plots as it were...
-
 rgb_colors = {0 0.5 1;0.5 1 0;0 1 0;1 0.5 0;1 0 0;1 0 0.5;0 1 0.5;0.5 0 1}; % this makes sense for AgustModel. it might not if we make another...
+ 
+figure(FileNum); 
+set(gcf,'Color','white','Position',[80 80 800 550]);
+subplot(3,3,1:3)
+scatter(LabRand(:,1),LabRand(:,2),'.'); hold on;
+scatter(color_pred_model_august.ClassificationSVM.X.a,color_pred_model_august.ClassificationSVM.X.b,'.')    
+legend('prediction data','Model data','Location','southwest'); 
+
+for i=1:numberOfcolors
+subplot(3,3,4:6)
+plot(NumPredFrames(:,i),'Color',cell2mat(rgb_colors(i,:)),'LineWidth',2); 
+ylim([0 6500]); xlim([2,size(Day_prediction,2)]);
+hold on;
+end
+title('# of frames that each color was predicted'); ylabel('# detected Frames'); xlabel('# of 5min movie'); legend(color_names,'Location','southwest','NumColumns',2);  
+
+subplot(3,3,7:8)
+plot(Numofblobs_all); title('Num of blobs per frame'); 
+subplot(3,3,9)
+histogram(Numofblobs_all); title('distribution of blobs/frame')
+suptitle(['Prediction Health Check',currentFile]); 
 
 
-
-
+saveas(gcf,['HC_',currentFile,'.png']) 
 end 
+end
