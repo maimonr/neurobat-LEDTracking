@@ -18,6 +18,6 @@ folders = folders(3:end); % get rid of 'wildcard' entries, idk what they are fuc
 for i = 1:size(folders,1)
 videoDir = [folders(i).folder,'\',folders(i).name]; 
 [centroidLocs, predColors, props, predPosterior, predLab, t2] = batch_process_LED_tracking(videoDir,LEDtrackingParams);
-fname = [saveFolder,'\LEDtracking_pred_social_',folders(i).name];
+fname = [saveFolder,'\LEDtracking_pred_social_#2_',folders(i).name];
 save(fname) 
 end 
