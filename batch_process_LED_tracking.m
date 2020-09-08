@@ -5,14 +5,14 @@ nVideo = length(video_fNames);
 
 lightsTh = exp(16.5); % threshold for excluding frames that the room lights were on
 
-[centroidLocs, predColors, props, predPosterior, predLab, frameIdx, frame_file_idx] = deal(cell(1,nVideo));
+[centroidLocs, predColors, props, predPosterior, predLab, file_frame_number, fileIdx] = deal(cell(1,nVideo));
 t2 = zeros(1,nVideo);
 parfor video_k = 1:nVideo
     v = VideoReader(fullfile(video_fNames(video_k).folder,video_fNames(video_k).name)); %#ok<TNMLP>
     t = tic;
     [centroidLocs{video_k}, predColors{video_k}, props{video_k}, predPosterior{video_k}] = deal(cell(1,NumFrames ));
-    frameIdx{video_k} = 1:v.NumFrames;
-    frame_file_idx{video_k} = video_k*ones(1,v.NumFrames);
+    file_frame_number{video_k} = 1:v.NumFrames;
+    fileIdx{video_k} = video_k*ones(1,v.NumFrames);
     for frame_k = 1: v.NumFrames
         f = readFrame(v);
         if sum(f,'all') < lightsTh
@@ -30,14 +30,14 @@ predColors = [predColors{:}];
 props = [props{:}];
 predPosterior = [predPosterior{:}];
 predLab = [predLab{:}];
-frameIdx = [frameIdx{:}];
-frame_file_idx = [frame_file_idx{:}];
+file_frame_number = [file_frame_number{:}];
+fileIdx = [fileIdx{:}];
 
 LEDTracks = struct('centroidLocs', centroidLocs, 'predColors', predColors,...
     'props', props, 'predPosterior', predPosterior, 'predLab', predLab,...
     'video_fNames', video_fNames, 'cameraParams', cameraParams,...
     'color_pred_model', color_pred_model,'lightsTh', lightsTh,...
-    'LEDtrackingParams', LEDtrackingParams,'frameIdx', frameIdx,...
-    'frame_file_idx', frame_file_idx); 
+    'LEDtrackingParams', LEDtrackingParams,'frameIdx', file_frame_number,...
+    'file_frame_number', fileIdx); 
 
 end
