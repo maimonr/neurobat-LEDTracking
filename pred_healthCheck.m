@@ -1,6 +1,6 @@
-
 function  pred_healthCheck(predDir) 
-  
+% This script just plots some of the raw data of the LED predictions to see general state of things  
+
 files = dir(predDir);
 files = files(3:end); % get rid of 'wildcard' entries, idk what they are fuck'em 
 
@@ -9,11 +9,11 @@ for FileNum = 1:size(files,1)
     load([predDir,'\',currentFile]);
 
 
-
 % prepare some things:
 
 load('color_pred_model_august'); 
 color_names = color_pred_model_august.ClassificationSVM.ClassNames;    % should be this: {'az','ch','gr','or','rd','re','sp','vi'}' 
+FigNum = 1; 
 numberOfcolors = size(color_names,1); 
 pred_more_then_once = zeros(1,8);  
 Numofblobs_all =[];
@@ -58,11 +58,10 @@ Lab = cat(1,Lab{:}); % combine it to a matrix
 %we want to downsmaple, but first randomize entries (so we don't undersample a specific color)
 Lab_RIndex = randperm(size(Lab,1))'; 
 Lab_RIndex5 = downsample(Lab_RIndex,5); 
-tic
 for i= 1:size(Lab_RIndex5,1)
     LabRand(i,:)=Lab(Lab_RIndex5(i),:);  
 end 
-toc 
+
 
 
 
@@ -75,12 +74,21 @@ end
 end 
 
 
- 
+% (4) here we arrange the x,y locs for the day
+locs = cat(1,Day_prediction{:}); 
+locsx = locs(:,:,1); 
+locsxdiff = [nan(1,8); abs(diff(locsx))]; 
+locsx_mediFilt = medfilt1(locsx,5); % rank 5 median filter, 5 is ~250ms  
+locsy = locs(:,:,2); 
+locsydiff = [nan(1,8); abs(diff(locsy))]; 
+locsy_mediFilt = medfilt1(locsy,5); % rank 5 median filter, 5 is ~250ms  
+
+
 %% Ploting the Plots as it were...
 rgb_colors = {0 0.5 1;0.5 1 0;0 1 0;1 0.5 0;1 0 0;1 0 0.5;0 1 0.5;0.5 0 1}; % this makes sense for AgustModel. it might not if we make another...
  
-figure(FileNum); 
-set(gcf,'Color','white','Position',[80 80 800 550]);
+figure(FigNum); 
+set(gcf,'Color','white','Position',[80 80 900 600]);
 subplot(3,3,1:3)
 scatter(LabRand(:,1),LabRand(:,2),'.'); hold on;
 scatter(color_pred_model_august.ClassificationSVM.X.a,color_pred_model_august.ClassificationSVM.X.b,'.')    
@@ -98,9 +106,50 @@ subplot(3,3,7:8)
 plot(Numofblobs_all); title('Num of blobs per frame'); 
 subplot(3,3,9)
 histogram(Numofblobs_all); title('distribution of blobs/frame')
-suptitle(['Prediction Health Check',currentFile]); 
+suptitle(['Prediction Health Check#1',currentFile]); 
+
+saveas(gcf,['HC#1_',currentFile,'.png']) 
+close; 
+
+figure(FigNum+1);
+set(gcf,'Color','white','Position',[60 60 1000 400]);
+for colorIdx = 1:numberOfcolors
+    subplot(2,8,colorIdx)
+    plot(locsx(:,colorIdx),locsy(:,colorIdx),'Color',cell2mat(rgb_colors(colorIdx,:)),'LineWidth',0.1)
+    title(color_names(colorIdx)); ylim([200 850]), xlim([410 1200]); 
+end 
+for colorIdx = 1:numberOfcolors
+    subplot(2,8,colorIdx+8)
+    plot(locsx_mediFilt(:,colorIdx),locsy_mediFilt(:,colorIdx),'Color',cell2mat(rgb_colors(colorIdx,:)),'LineWidth',0.1)
+    title(['MedFelt ',color_names(colorIdx)]); ylim([200 850]), xlim([410 1200]); 
+end 
+suptitle(['Prediction Health Check#2',currentFile]); 
+
+saveas(gcf,['HC#2_',currentFile,'.png']) 
+close;
+
+figure(FigNum+2);
+set(gcf,'Color','white','Position',[80 80 850 550]);
+for colorIdx = 1:numberOfcolors
+    subplot(4,4,colorIdx)
+    plot(locsx(:,colorIdx),'Color',cell2mat(rgb_colors(colorIdx,:))); 
+    title(color_names(colorIdx));  
+end 
+suptitle('Prediction Health Check#2 - x,y locs'); 
+
+set(gcf,'Color','white','Position',[80 80 850 550]);
+for colorIdx = 1:numberOfcolors
+    subplot(4,4,colorIdx+8)
+    plot(locsx_mediFilt(:,colorIdx),'Color',cell2mat(rgb_colors(colorIdx,:))); 
+    title(['medFilt ',color_names(colorIdx)]); 
+end 
+suptitle(['Prediction Health Check#3',currentFile]); 
+
+saveas(gcf,['HC#3_',currentFile,'.png']) 
+close;
 
 
-saveas(gcf,['HC_',currentFile,'.png']) 
+
+FigNum = FigNum+3;
 end 
 end
