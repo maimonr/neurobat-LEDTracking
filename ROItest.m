@@ -6,7 +6,7 @@ folders = folders(3:end); % get rid of 'wildcard' entries, idk what they are fuc
 ROIIdx(1,:) = [35 810 300 1420]; 
 fisheyeModel = load('fisheye_model.mat'); 
 cameraParams = fisheyeModel.cameraParams; 
-VidNum = 5 ; % just arbitrary we choose one to represent the day
+VidNum = 9 ; % just arbitrary we choose one to represent the day
 
 for i = 1:size(folders,1)
 videoDir = [folders(i).folder,'\',folders(i).name]; 
@@ -18,6 +18,6 @@ v.CurrentTime = 10; % just arbitrary
 figure; 
   imshowpair(fFish,fFish(35:810,300:1420,:),'montage');
   title(videoDir(44:end))
-  
+  saveas(gcf,['ROI compare_',videoDir(45:end),'.png']) 
 end
 end
