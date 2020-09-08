@@ -30,12 +30,13 @@ pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','
 dflts  = {[],5,10,10,[],[],200,[]};
 [hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
-if ~isempty(params) 
- minLum = params.minLum; 
- mergeThresh = params.mergeThresh; 
- minArea = params.minArea;
- maxArea = params.maxArea; 
-end 
+if ~isempty(params)
+    minLum = params.minLum;
+    mergeThresh = params.mergeThresh;
+    minArea = params.minArea;
+    maxArea = params.maxArea;
+    ROIIdx = params.ROIIdx;
+end
  
 if isempty(color_pred_model)
     try 
