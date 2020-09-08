@@ -17,7 +17,7 @@ v.CurrentTime = 10; % just arbitrary
   fFish = undistortFisheyeImage(f, cameraParams.Intrinsics);
 figure; 
   imshowpair(fFish,fFish(35:810,300:1420,:),'montage');
-  title(videoDir(44:end))
-  saveas(gcf,['ROI compare_',videoDir(45:end),'.png']) 
+  title(videoDir(46:end))
+  saveas(gcf,['ROI compare_',videoDir(46:end),'.png']) 
 end
 end
