@@ -1,4 +1,4 @@
-function [centroidLocs, predColors, props, predPosterior] = predict_LED_location(f,varargin)
+function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED_location(f,varargin)
 
 % take a frame from a video, (optionally) filter by preset color ranges,
 % find regions of color, and predict based on a pre-trained classifier the
@@ -26,10 +26,17 @@ function [centroidLocs, predColors, props, predPosterior] = predict_LED_location
 % props: regionprops output regarding the region(s) in bw
  
 
-pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea'};
-dflts  = {[],20,20,30,[],[],200};
-[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params'};
+dflts  = {[],5,10,10,[],[],200,[]};
+[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
+if ~isempty(params) 
+ minLum = params.minLum; 
+ mergeThresh = params.mergeThresh; 
+ minArea = params.minArea;
+ maxArea = params.maxArea; 
+end 
+ 
 if isempty(color_pred_model)
     try 
         s = load('color_prediction_model');
@@ -55,7 +62,7 @@ if ~isempty(hsvTable) % if provided, create a binary mask for each color filter
     n_hsv_colors = size(hsvTable,2);
     bw = cell(1,n_hsv_colors);
     for color_k = 1:n_hsv_colors
-        bw{color_k} = getFrameMask(fHsv,'hsvLims',hsvTable{:,color_k}); 
+        bw{color_k} = getFrameMask(fHsv,'hsvLims',hsvTable{:,color_k},'params',params); 
     end
 else
     n_hsv_colors = 1;
@@ -67,7 +74,7 @@ if exist('colorspace','file')
 else
     labFunc = @rgb2lab;
 end
-[centroidLocs,predColors,props,predPosterior] = deal(cell(1,n_hsv_colors));
+[centroidLocs,predColors,props,predPosterior, predLab] = deal(cell(1,n_hsv_colors));
 
 for color_k = 1:n_hsv_colors
     [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
@@ -88,7 +95,7 @@ for color_k = 1:n_hsv_colors
             regionLab = regionLab(regionLab(:,1) > minLum,:);
             color_mat(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
         end
-        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationDiscriminant,color_mat); % predict which color based on median pixel a and b values
+        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationSVM  ,color_mat); % predict which color based on median pixel a and b values
         if length(regionLabels) == 1 && n_hsv_colors > 1 % if there's only one region in this filtered image, use it
             predColors{color_k} = predColors{color_k}{1}; 
         elseif n_hsv_colors > 1 % if there's more than one region in this filtered image, select the one with the highest posterior probability
@@ -102,6 +109,7 @@ for color_k = 1:n_hsv_colors
             predColors = predColors{1};
             predPosterior = predPosterior{1};
             centroidLocs = centroidLocs{1};
+            predLab = color_mat; 
         end
     end
 end
