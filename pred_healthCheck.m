@@ -4,7 +4,7 @@ function  pred_healthCheck(predDir)
 files = dir(predDir);
 files = files(3:end); % get rid of 'wildcard' entries, idk what they are fuck'em 
 
-for FileNum = 1:size(files,1)
+%for FileNum = 1:size(files,1)
     currentFile = files(FileNum).name;
     load([predDir,'\',currentFile]);
 
@@ -21,9 +21,9 @@ Lab_all = [];
 
 % (1) Remove times when a color is predicted more then once by taking only the max posterior predcition blob. 
 % and also count up the number of blobs 
-for MovieNum = 2:size(centroidLocs,2) 
+for MovieNum = 1:size(centroidLocs,2) 
     for frame_k = 1:size(centroidLocs{1,MovieNum},2)  
-    Numofblobs{frame_k} = size(cell2mat(centroidLocs{1,MovieNum}(frame_k)),1); 
+    %Numofblobs{frame_k} = size(cell2mat(centroidLocs{1,MovieNum}(frame_k)),1); 
         for color_k = 1:numberOfcolors 
         current_color_idx = strcmp(predColors{MovieNum}{frame_k},color_names{color_k}); 
             if sum(current_color_idx) > 1 
@@ -46,9 +46,9 @@ for MovieNum = 2:size(centroidLocs,2)
         end
     end
     Day_prediction(MovieNum) = {pred_centroids}; 
-    Numofblobs_all = cat(2,Numofblobs_all,Numofblobs); 
+    %Numofblobs_all = cat(2,Numofblobs_all,Numofblobs); 
 end 
-Numofblobs_all = cell2mat(Numofblobs_all); 
+%Numofblobs_all = cell2mat(Numofblobs_all); 
 
 % (2) Here we convert La*b* blob cells to one long matrix, and downsample to plot  
 
@@ -152,4 +152,4 @@ close;
 
 FigNum = FigNum+3;
 end 
-end
+%end
