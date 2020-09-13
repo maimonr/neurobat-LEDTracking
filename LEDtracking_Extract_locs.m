@@ -83,7 +83,6 @@ y = medfilt1(y,filtRank);
 % gap filling: 
   if ~isempty(GapTh) % if gapTh was given, then we fill gap by gap  
        xGapMatrix = bwlabel(isnan(x)); % fast way to tag gaps by using bwlable to find "connceted" regions of logical mtraix in 1D, and lable them
-       gapprops  = props(GapMatrix); 
        NumofGaps = max(xGapMatrix); 
     xF = x; % will will be making changes directly to vector, so we create a duplicate 
     yF = y; % same 
@@ -133,7 +132,6 @@ for colorIdx = 1:numberOfcolors
     scatter(ExtractedLocs.filtered_xy{colorIdx}(:,1),ExtractedLocs.filtered_xy{colorIdx}(:,2),2,'k.'); hold on; 
     title(color_names(colorIdx)); xlim([ROI_rot.xlims(1) ROI_rot.xlims(2)]); ylim([ROI_rot.ylims(1) ROI_rot.ylims(2)]) 
 end 
-
 
 
 end 
