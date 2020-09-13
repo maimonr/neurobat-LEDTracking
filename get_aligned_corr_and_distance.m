@@ -1,4 +1,7 @@
-function [r,d,video_t_rs,lfp_fs,batPairs] = get_aligned_corr_and_distance(expDate,baseDir,remote_base_dir)
+function [r,d,video_t_rs,lfp_fs,batPairs] = get_aligned_corr_and_distance(expDate,baseDir)
+
+led_tracking_dir = fullfile(baseDir,'tracking_data');
+video_data_dir = fullfile(baseDir,'video_data');
 
 exp_date_str = datestr(expDate,'yyyymmdd');
 lfpFnames = dir(fullfile(baseDir,'lfp_data',['*' exp_date_str '_all_session_lfp_results.mat']));
@@ -7,13 +10,14 @@ for k = 1:length(lfpFnames)
 end
 
 exp_date_str = datestr(expDate,'mmddyyyy');
-videoDir = fullfile(remote_base_dir,exp_date_str,'video','social','color');
-s = load(fullfile(videoDir,'color_frame_timestamps_info.mat'));
+frame_ts_info_fname = fullfile(video_data_dir,[exp_date_str '_color_frame_timestamps_info_social.mat']);
+s = load(frame_ts_info_fname);
 frame_ts_info = s.frame_ts_info;
 
-LEDTracks = load(fullfile(baseDir,'LED_tracking',['LEDtracking_pred_social_' exp_date_str '.mat']));
+LEDTracks = load(fullfile(led_tracking_dir,['LEDtracking_pred_social_' exp_date_str '.mat']));
 s = load('color_pred_model_august.mat');
 color_pred_model = s.color_pred_model_august;
+
 pred_centroids = get_pred_centroids(LEDTracks,color_pred_model);
 videoData = struct('file_frame_number',LEDTracks.file_frame_number,'fileIdx',LEDTracks.fileIdx,'videoData',pred_centroids);
 [lfp_interp, frame_data_rs, video_t_rs, lfp_fs] = get_aligned_lfp_frame_data(videoData,frame_ts_info,all_session_lfp_power);
@@ -32,7 +36,6 @@ n_bat_pair = size(batPairs,1);
 nSample = size(frame_data_rs,1);
 
 [r,d] = deal(zeros(n_bat_pair,nSample));
-
 
 for bat_pair_k = 1:size(batPairs,1)
     lfp_bat_idx = zeros(1,2);
