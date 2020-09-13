@@ -1,11 +1,11 @@
-function [filtered_xy, filledGaps_xy] = LEDtracking_Extract_locs(file, varargin)
+function [ExtractedLocs] = LEDtracking_Extract_locs(file, varargin)
 % First-pass analysis of location data taken from the raw results of the LED_tracking model for a given day. 
 
 % first, we remove douplicaitons of color per frame (if you already have the variable locs saved you can load it and it will skip this first part*) 
 % We then transpose the xy values to be able to empose the XY limts of cage top
-% next, we filter and fill in gaps in data. finally, we calcuate measures of the distances and movments of bats. then plot 
+% next, we filter and fill in gaps in data.
 % INPUTS: 
-% 1)file: the dir location and and name of prediction results to load (could be Day_predciton alone )
+% 1)file: the dir location and and name of prediction results to load (could be locs alone)
 % optional: 
 % 2)filtRank: the rank of the median filter used to smooth data (scalar, #frames) 
 % 3)movWindow: the size of the moving window for filling the gaps if useing defult (movMedian), (scalar, #frames) 
@@ -21,8 +21,6 @@ dflts  = {5,40,[],'linear'};
 
 % prepare some things:
 load(file); 
-
-     
 
 load('color_pred_model_august'); 
 color_names = color_pred_model_august.ClassificationSVM.ClassNames;    % should be this: {'az','ch','gr','or','rd','re','sp','vi'}' 
@@ -66,10 +64,10 @@ for colorIndx = 1:8 % we run this analysis bat by bat (e.i color by color)
 
 % "rotate" pixels    
 locsXY = [locs(:,colorIndx,1)';locs(:,colorIndx,2)']; % etract the x,y of a specific color 
-C = repmat(ROI_rot.c,size(locsXY,2),1)'; % prepare a matrix to substrcut and readd the cetner values after rot. 
+C = repmat(ROI_rot.c,size(locsXY,2),1)'; % prepare a matrix to substrcut and readd the center values after rot. 
 locsXY_rot=((ROI_rot.R*(locsXY-C))+C)'; % rotate all points around center(C) of polygon (cage top) 
 
-% enforce x,y min/max limtis for stepping out of cage top bounds 
+% enforce x,y min/max limits for stepping out of cage-top bounds 
 x = locsXY_rot(:,1); 
 x(x<ROI_rot.xlims(1)) = ROI_rot.xlims(1);
 x(x>ROI_rot.xlims(2)) = ROI_rot.xlims(2); 
@@ -92,7 +90,7 @@ y = medfilt1(y,filtRank);
      gapFrames = find(xGapMatrix == gapIndx); % find the frames that we need to fill 
      Gapstart = gapFrames(1)-5; % add smaples before and after gap for extrapolating. 
      Gapend = gapFrames(end)+5;
-                if size(gapFrames,1) < GapTh &&  Gapstart>=1 && Gapend<=size(xF,1) % only if the gap is small enough, and not out of bounds 
+                if size(gapFrames,1) < GapTh && Gapstart>=1 && Gapend<=size(xF,1) % only if the gap is small enough, and not out of bounds 
         xfill = fillmissing(xF(Gapstart:Gapend),GapMethod,'SamplePoints',(Gapstart:Gapend)); 
         xF(Gapstart:Gapend) = xfill; 
         yfill = fillmissing(yF(Gapstart:Gapend),GapMethod,'SamplePoints',(Gapstart:Gapend)); 
@@ -106,8 +104,8 @@ y = medfilt1(y,filtRank);
   end  
 
 % collecting the results: 
-filtered_xy{colorIndx} = [x,y]; 
-filledGaps_xy{colorIndx} = [xF,yF]; 
+ExtractedLocs.filtered_xy{colorIndx} = [x,y]; 
+ExtractedLocs.filledGaps_xy{colorIndx} = [xF,yF]; 
 end 
 
 
@@ -118,8 +116,8 @@ figure;
 set(gcf,'Color','white','Position',[80 80 1100 550]);
 for colorIdx = 1:numberOfcolors
     subplot(2,4,colorIdx)
-    plot(filledGaps_xy{colorIdx}(:,1),'k', 'lineWidth',0.1); hold on; 
-    plot(filtered_xy{colorIdx}(:,1),'Color',cell2mat(rgb_colors(colorIdx,:))); 
+    plot(ExtractedLocs.filledGaps_xy{colorIdx}(:,1),'k', 'lineWidth',0.1); hold on; 
+    plot(ExtractedLocs.filtered_xy{colorIdx}(:,1),'Color',cell2mat(rgb_colors(colorIdx,:))); 
     title(color_names(colorIdx));  
 end 
 suptitle('x,y over time (fills in black)');
@@ -128,9 +126,9 @@ figure;
 set(gcf,'Color','white','Position',[80 80 1100 550]);
 for colorIdx = 1:numberOfcolors
     subplot(2,4,colorIdx)
-    scatter(filledGaps_xy{colorIdx}(:,1),filledGaps_xy{colorIdx}(:,2),2,'r.'); hold on; 
-    scatter(filtered_xy{colorIdx}(:,1),filtered_xy{colorIdx}(:,2),2,'k.'); hold on; 
-    title(color_names(colorIdx)); % xlim([ROI_rot.xlims(1) ROI_rot.xlims(2)]); ylim([ROI_rot.ylims(1) ROI_rot.ylims(2)]) 
+    scatter(ExtractedLocs.filledGaps_xy{colorIdx}(:,1),ExtractedLocs.filledGaps_xy{colorIdx}(:,2),2,'r.'); hold on; 
+    scatter(ExtractedLocs.filtered_xy{colorIdx}(:,1),ExtractedLocs.filtered_xy{colorIdx}(:,2),2,'k.'); hold on; 
+    title(color_names(colorIdx)); xlim([ROI_rot.xlims(1) ROI_rot.xlims(2)]); ylim([ROI_rot.ylims(1) ROI_rot.ylims(2)]) 
 end 
 
 
