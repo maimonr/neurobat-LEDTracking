@@ -8,7 +8,16 @@ lightsTh = exp(16.5); % threshold for excluding frames that the room lights were
 [centroidLocs, predColors, props, predPosterior, predLab, file_frame_number, fileIdx] = deal(cell(1,nVideo));
 t2 = zeros(1,nVideo);
 parfor video_k = 1:nVideo
-    v = VideoReader(fullfile(video_fNames(video_k).folder,video_fNames(video_k).name)); %#ok<TNMLP>
+    try
+        v = VideoReader(fullfile(video_fNames(video_k).folder,video_fNames(video_k).name)); %#ok<TNMLP>
+    catch err
+        if strcmp(err.identifier,'MATLAB:audiovideo:VideoReader:InitializationFailed')
+            continue
+        else
+            rethrow(err)
+        end
+    end
+        
     t = tic;
     nFrame = v.NumFrames;
     [centroidLocs{video_k}, predColors{video_k}, props{video_k}, predPosterior{video_k}, predLab{video_k}] = deal(cell(1,nFrame));
