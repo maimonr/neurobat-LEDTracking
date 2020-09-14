@@ -2,9 +2,10 @@ function [r,d,video_t_rs,lfp_fs,batPairs] = get_aligned_corr_and_distance(expDat
 
 led_tracking_dir = fullfile(baseDir,'tracking_data');
 video_data_dir = fullfile(baseDir,'video_data');
+lfp_data_dir = fullfile(baseDir,'lfp_data');
 
 exp_date_str = datestr(expDate,'yyyymmdd');
-lfpFnames = dir(fullfile(baseDir,'lfp_data',['*' exp_date_str '_all_session_lfp_results.mat']));
+lfpFnames = dir(fullfile(lfp_data_dir,['*' exp_date_str '_all_session_lfp_results.mat']));
 for k = 1:length(lfpFnames)
     all_session_lfp_power(k) = load(fullfile(lfpFnames(k).folder,lfpFnames(k).name));
 end
@@ -44,15 +45,15 @@ for bat_pair_k = 1:size(batPairs,1)
     end
     
     current_lfp_data =  [nanmedian(lfp_interp{lfp_bat_idx(1)},1);nanmedian(lfp_interp{lfp_bat_idx(2)},1)]';
-    current_lfp_data = smoothdata(current_lfp_data,'movmean',100);
+%     current_lfp_data = smoothdata(current_lfp_data,'movmean',100);
     centroid_bat_idx = zeros(1,2);
     for bat_k = 1:2
         color_idx = str2double(batPairs{bat_pair_k,bat_k}) == bat_color_table.batNum;
         centroid_bat_idx(bat_k) = find(strcmp(bat_color_table.color(color_idx),model_colors));
     end
     
-    r(bat_pair_k,:) = movCorr(current_lfp_data(:,1),current_lfp_data(:,2),500,0);
-    d(bat_pair_k,:) = smoothdata(vecnorm(diff(frame_data_rs(:,:,centroid_bat_idx),[],3)'),100);
+    r(bat_pair_k,:) = movCorr(current_lfp_data(:,1),current_lfp_data(:,2),50,0);
+    d(bat_pair_k,:) = vecnorm(diff(frame_data_rs(:,:,centroid_bat_idx),[],3)');
 end
 
 end
