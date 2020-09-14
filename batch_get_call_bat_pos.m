@@ -92,24 +92,3 @@ for call_k = 1:nCall
 end
 
 end
-
-function reordered_call_bat_pos = reorder_bat_pos(call_bat_pos,T,expDate,sessionType,all_bat_nums,colorStrs)
-
-bat_idx = contains(T.Properties.VariableNames,'Bat_');
-color_idx = contains(T.Properties.VariableNames,'Color_');
-
-nBats = length(all_bat_nums);
-nCall = size(call_bat_pos,1);
-reordered_call_bat_pos = nan(nCall,2,nBats);
-
-T_exp = T(T.Date == expDate & strcmp(T.Session,sessionType),:);
-bat_color_table = table(T_exp{1,bat_idx}',T_exp{1,color_idx}','VariableNames',{'batNum','color'});
-
-for color_k = 1:length(colorStrs)
-    color_bat_num = bat_color_table.batNum(strcmp(colorStrs{color_k},bat_color_table.color));
-    current_bat_idx = all_bat_nums == color_bat_num;
-    reordered_call_bat_pos(:,:,current_bat_idx) = call_bat_pos(:,:,color_k);
-end
-
-
-end

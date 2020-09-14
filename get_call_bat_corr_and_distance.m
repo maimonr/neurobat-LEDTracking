@@ -42,10 +42,10 @@ for call_k = 1:nCalls
         calling_bat_num = calling_bat_nums{call_k}(call_bat_k);
         calling_bat_idx = strcmp(all_bat_nums,calling_bat_num);
         
-        for bat_pair_k = 1:size(used_bat_pairs,1)
+        for bat_pair_k = 1:n_used_bat_pairs
             listening_bat_num = setdiff(used_bat_pairs(bat_pair_k,:),calling_bat_num);
-            current_bat_idx = ismember(all_bat_nums,listening_bat_num);
-            callDist{call_k}(bat_pair_k,call_bat_k) = nanmean(vecnorm(call_bat_pos(:,current_bat_idx) - call_bat_pos(:,calling_bat_idx)));
+            listening_bat_idx = ismember(all_bat_nums,listening_bat_num);
+            callDist{call_k}(bat_pair_k,call_bat_k) = nanmean(vecnorm(call_bat_pos(:,listening_bat_idx) - call_bat_pos(:,calling_bat_idx)));
         end
         
     end
