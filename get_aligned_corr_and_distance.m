@@ -1,5 +1,7 @@
-function [r,d,video_t_rs,lfp_fs,batPairs] = get_aligned_corr_and_distance(expDate,baseDir)
-
+function [r,d,video_t_rs,lfp_fs,batPairs] = get_aligned_corr_and_distance(expDate,baseDir,smoothScale)
+if nargin < 3
+    smoothScale = 100;
+end
 led_tracking_dir = fullfile(baseDir,'tracking_data');
 video_data_dir = fullfile(baseDir,'video_data');
 lfp_data_dir = fullfile(baseDir,'lfp_data');
@@ -44,16 +46,30 @@ for bat_pair_k = 1:size(batPairs,1)
         lfp_bat_idx(bat_k) = find(strcmp({all_session_lfp_power.batNum},batPairs{bat_pair_k,bat_k}));
     end
     
-    current_lfp_data =  [nanmedian(lfp_interp{lfp_bat_idx(1)},1);nanmedian(lfp_interp{lfp_bat_idx(2)},1)]';
-%     current_lfp_data = smoothdata(current_lfp_data,'movmean',100);
+    current_lfp_data =  fillmissing([nanmedian(lfp_interp{lfp_bat_idx(1)},1);nanmedian(lfp_interp{lfp_bat_idx(2)},1)]','movmean',10);
+%     current_lfp_data = smoothdata(current_lfp_data,'movmean',smoothScale);
     centroid_bat_idx = zeros(1,2);
     for bat_k = 1:2
         color_idx = str2double(batPairs{bat_pair_k,bat_k}) == bat_color_table.batNum;
         centroid_bat_idx(bat_k) = find(strcmp(bat_color_table.color(color_idx),model_colors));
     end
     
-    r(bat_pair_k,:) = movCorr(current_lfp_data(:,1),current_lfp_data(:,2),50,0);
+    r(bat_pair_k,:) = movCorr(current_lfp_data(:,1),current_lfp_data(:,2),smoothScale,0);
     d(bat_pair_k,:) = vecnorm(diff(frame_data_rs(:,:,centroid_bat_idx),[],3)');
 end
 
+[~,~,~,~,sync_bat_num] = get_session_info(expDate,'social');
+eventData = load(fullfile(baseDir,'event_file_data',strjoin({sync_bat_num,datestr(expDate,'yyyymmdd'),'EVENTS.mat'},'_')));
+audio2nlg = load(fullfile(baseDir,'call_data',[datestr(expDate,'yyyymmdd') '_audio2nlg_fit_social.mat']));
+food_time_idx = find(contains(eventData.event_types_and_details,'banana'),1,'first');
+if length(food_time_idx) == 1
+    foodTime = 1e-3*(1e-3*eventData.event_timestamps_usec(food_time_idx) - audio2nlg.first_nlg_pulse_time);   
+else
+    disp('Could not find food delivery string')
+end
+
+tIdx = video_t_rs < foodTime;
+r = r(:,tIdx);
+d = d(:,tIdx);
+video_t_rs = video_t_rs(tIdx);
 end
