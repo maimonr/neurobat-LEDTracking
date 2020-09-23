@@ -6,7 +6,7 @@ function pred_centroids = get_pred_centroids(LEDTracks,color_pred_model)
 % here as an index into the prediction posterior matrix that the model
 % produces.
 %% Outputs:
-% pred_centroids: a [num. of frames X num. of colors X 2] matrix of
+% pred_centroids: a [num. of frames X 2 X num. of colors] matrix of
 % prediction centroid locations in X and Y for each frame and each color.
 
 color_names = color_pred_model.ClassificationSVM.ClassNames;
