@@ -26,9 +26,9 @@ function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED
 % props: regionprops output regarding the region(s) in bw
  
 
-pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params'};
-dflts  = {[],5,10,10,[],[],200,[]};
-[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params','sessionType'};
+dflts  = {[],5,10,10,[],[],200,[],[]};
+[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params,sessionType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if ~isempty(params)
     minLum = params.minLum;
@@ -37,7 +37,16 @@ if ~isempty(params)
     maxArea = params.maxArea;
     ROIIdx = params.ROIIdx;
 end
- 
+
+if ~isempty(sessionType)
+   ses = strcmp(sessionType,'social'); 
+   if ses == 0 
+       ROIIdx = params.ROIIdxVocal; % the only other ROI is for vocal, so we use it if its not social  
+   else % else bugger off mate, nothing doing   
+   end 
+end 
+    
+
 if isempty(color_pred_model)
     try 
         s = load('color_prediction_model');

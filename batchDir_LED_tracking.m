@@ -1,14 +1,4 @@
 function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates)
-% this snnipet can wrap around batch_process but i gave it a seperate
-% script. sue me...
-
-% This thing just goes thru the folders that contain the videos locally and unleashes batch_process on them, then saves.
-% INPUTS:
-% videosFolder: a folder that containes a few folders. Each seperate folder has only mp4 files of the moveis from social of one day. like 08062020... etc ...
-% saveFolder: the destination folder to save stuff to. should be on the server if possible
-% %LEDtrackingParams: the parameters used in the model.
-%OUTPUT:
-% It saves the workspace you get from the prediction to saveFolder, what else do you want?
 
 LEDtrackingParams = load('LEDtrackingParams.mat');
 
@@ -28,7 +18,7 @@ for exp_k = 1:length(expDates)
        keyboard
     end
     
-    LEDTracks = batch_process_LED_tracking(local_video_dir,LEDtrackingParams,cameraParams,color_pred_model);
+    LEDTracks = batch_process_LED_tracking(local_video_dir,LEDtrackingParams,cameraParams,color_pred_model,sessionType);
     
     outFname = fullfile(saveFolder,strjoin({'LEDtracking_pred',sessionType,exp_date_str},'_'));
     save(outFname,'-struct','LEDTracks')

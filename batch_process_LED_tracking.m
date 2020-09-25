@@ -1,4 +1,4 @@
-function LEDTracks = batch_process_LED_tracking(videoDir,LEDtrackingParams,cameraParams,color_pred_model)
+function LEDTracks = batch_process_LED_tracking(videoDir,LEDtrackingParams,cameraParams,color_pred_model,sessionType)
 
 video_fNames = dir(fullfile(videoDir,'*.mp4'));
 nVideo = length(video_fNames);
@@ -28,7 +28,7 @@ parfor video_k = 1:nVideo
         if sum(f,'all') < lightsTh
             f = undistortFisheyeImage(f, cameraParams.Intrinsics);
             [centroidLocs{video_k}{frame_k}, predColors{video_k}{frame_k}, props{video_k}{frame_k}, predPosterior{video_k}{frame_k},predLab{video_k}{frame_k}] =...
-                predict_LED_location(f,'color_pred_model',color_pred_model,'params',LEDtrackingParams);
+                predict_LED_location(f,'color_pred_model',color_pred_model,'params',LEDtrackingParams,'sessionType',sessionType);
         else
             [centroidLocs{video_k}{frame_k}, predColors{video_k}{frame_k}, props{video_k}{frame_k}, predPosterior{video_k}{frame_k},predLab{video_k}{frame_k}] = deal(NaN);
         end
