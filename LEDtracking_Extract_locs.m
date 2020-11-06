@@ -24,7 +24,7 @@ load(file);
 
 load('color_pred_model_august');
 color_names = color_pred_model_august.ClassificationSVM.ClassNames;    % should be this: {'az','ch','gr','or','rd','re','sp','vi'}'
-numberOfcolors = size(color_names,1);
+numberOfcolors = size(color_names,1); 
 
 if ~exist('locs') % if you already calc. locs, then you can skip part 1.
     
