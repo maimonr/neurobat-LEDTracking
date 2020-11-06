@@ -41,7 +41,7 @@ end
 if ~isempty(sessionType)
    ses = strcmp(sessionType,'social'); 
    if ses == 0 
-       ROIIdx = params.ROIIdxVocal; % the only other ROI is for vocal, so we use it if its not social  
+       ROIIdx = params.ROIIdx;  
    else % else bugger off mate, nothing doing   
    end 
 end 
