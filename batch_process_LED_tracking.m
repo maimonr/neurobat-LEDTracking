@@ -26,7 +26,7 @@ parfor video_k = 1:nVideo
         f = readFrame(v);
         if sum(f,'all') < lightsTh
             
-            %f = undistortFisheyeImage(f, cameraParams.Intrinsics);
+            f = undistortFisheyeImage(f, cameraParams.Intrinsics);
             [centroidLocs{video_k}{frame_k}, predColors{video_k}{frame_k}, props{video_k}{frame_k}, predPosterior{video_k}{frame_k},predLab{video_k}{frame_k}] =...
                 predict_LED_location(f,'color_pred_model',color_pred_model,'params',LEDtrackingParams,'sessionType',sessionType);
         else
