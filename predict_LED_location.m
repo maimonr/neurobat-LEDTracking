@@ -27,7 +27,7 @@ function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED
  
 
 pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params','sessionType'};
-dflts  = {[],5,10,10,[],[],200,[],[]};
+dflts  = {[],5,10,25,[],[],200,[],[]};
 [hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params,sessionType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if ~isempty(params)
