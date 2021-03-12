@@ -5,8 +5,6 @@ function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED
 % color in the image.
 % INPUTS:
 % f: h x w x 3 image to be processed
-% hsvTable: output of either "get_hsv_lim_mats" (better performance) or
-% "get_hsv_lims"
 % minLum: minimum value of L in L*a*b color space to consider for color
 % prediction (higher value = higher luminance)
 % mergeThresh: number of pixels below which nearby regions are recursively
@@ -26,9 +24,9 @@ function [centroidLocs, predColors, props, predPosterior, predLab] = predict_LED
 % props: regionprops output regarding the region(s) in bw
  
 
-pnames = {'hsvTable','minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params','sessionType'};
+pnames = {'minLum','mergeThresh','minArea','color_pred_model','ROI','maxArea','params','sessionType'};
 dflts  = {[],5,10,25,[],[],200,[],[]};
-[hsvTable,minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params,sessionType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+[minLum,mergeThresh,minArea,color_pred_model,ROIIdx,maxArea,params,sessionType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 if ~isempty(params)
     minLum = params.minLum;
@@ -58,8 +56,6 @@ if isempty(color_pred_model)
     end
 end
 
-fHsv = rgb2hsv(f);
-
 if ~isempty(ROIIdx) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero. do this just once to save on performance
     ROI = true(size(f));
     for roi_k = 1:size(ROIIdx,1)
@@ -68,61 +64,43 @@ if ~isempty(ROIIdx) % If no ROI is defined, use entire image, otherwise set valu
     f(ROI) = NaN;
 end
 
-if ~isempty(hsvTable) % if provided, create a binary mask for each color filter
-    n_hsv_colors = size(hsvTable,2);
-    bw = cell(1,n_hsv_colors);
-    for color_k = 1:n_hsv_colors
-        bw{color_k} = getFrameMask(fHsv,'hsvLims',hsvTable{:,color_k},'params',params); 
-    end
-else
-    n_hsv_colors = 1;
-    bw{1} = getFrameMask(f,'ROI',ROIIdx);
-end
+bw = getFrameMask(f,'ROI',ROIIdx);
 
 if exist('colorspace','file')
     labFunc = @(frame) colorspace('Lab<-rgb',im2double(frame)); % this function is much faster than the native matlab code
 else
     labFunc = @rgb2lab;
 end
-[centroidLocs,predColors,props,predPosterior, predLab] = deal(cell(1,n_hsv_colors));
 
-for color_k = 1:n_hsv_colors
-    [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',mergeThresh,'minArea',minArea);
-    if any([props{color_k}.Area] > maxArea)
-        fGray = rgb2gray(f);
-        bw{color_k} = split_blobs(fGray,bw{color_k},props{color_k},maxArea);
-        [centroidLocs{color_k}, props{color_k}, cc] = findLEDcentroid(bw{color_k},'mergeThresh',[],'minArea',minArea);
-    end
-    color_mat = nan(length(props{color_k}),2); % pre allocated array for median color values in each region
-    
-    regionLabels = 1:cc.NumObjects; % prepare to iterate through each region detected in findLEDCentroid
-    if ~isempty(regionLabels)
-        for region_k = regionLabels
-            regionIdx = cc.PixelIdxList{region_k};
-            f = reshape(f,[],3);
-            regionRGB = f(regionIdx,:);
-            regionLab = labFunc(regionRGB);
-            regionLab = regionLab(regionLab(:,1) > minLum,:);
-            color_mat(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
-        end
-        [predColors{color_k},predPosterior{color_k}] = predict(color_pred_model.ClassificationSVM  ,color_mat); % predict which color based on median pixel a and b values
-        if length(regionLabels) == 1 && n_hsv_colors > 1 % if there's only one region in this filtered image, use it
-            predColors{color_k} = predColors{color_k}{1}; 
-        elseif n_hsv_colors > 1 % if there's more than one region in this filtered image, select the one with the highest posterior probability
-            [~,max_posterior_idx] = max(predPosterior{color_k},[],'all','linear');
-            [row,~] = ind2sub(size(predPosterior{color_k}),max_posterior_idx);          
-            centroidLocs{color_k} = centroidLocs{color_k}(row,:);
-            props{color_k} = props{color_k}(row,:);
-            predColors{color_k} = predColors{color_k}{row};
-            predPosterior{color_k} = predPosterior{color_k}{row};
-        else % if we're not color filtering, use all predicted colors
-            predColors = predColors{1};
-            predPosterior = predPosterior{1};
-            centroidLocs = centroidLocs{1};
-            predLab = color_mat; 
-        end
-    end
+[centroidLocs, props, cc] = findLEDcentroid(bw,'mergeThresh',mergeThresh,'minArea',minArea);
+if any([props.Area] > maxArea)
+    fGray = rgb2gray(f);
+    bw = split_blobs(fGray,bw,props,maxArea);
+    [centroidLocs, props, cc] = findLEDcentroid(bw,'mergeThresh',[],'minArea',minArea);
 end
+predLab = nan(length(props),2); % pre allocated array for median color values in each region
+
+regionLabels = 1:cc.NumObjects; % prepare to iterate through each region detected in findLEDCentroid
+if ~isempty(regionLabels)
+    f = reshape(f,[],3);
+    for region_k = regionLabels
+        regionIdx = cc.PixelIdxList{region_k};
+        regionRGB = f(regionIdx,:);
+        regionLab = labFunc(regionRGB);
+        regionLab = regionLab(regionLab(:,1) > minLum,:);
+        predLab(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
+    end
+    nanIdx = any(isnan(predLab),2);
+    predLab = predLab(~nanIdx,:);
+    centroidLocs = centroidLocs(~nanIdx,:);
+    props = props(~nanIdx);
+    [predColors,predPosterior] = predict(color_pred_model,predLab); % predict which color based on median pixel a and b value
+else
+    predColors = {};
+    predPosterior = [];
+    predLab = zeros(0,2);
+end
+
 end
 
 function bw = split_blobs(fGray,bw,props,maxArea)

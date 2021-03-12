@@ -1,9 +1,7 @@
-function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates)
+function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates,LEDtrackingParams)
 
-LEDtrackingParams = load('LEDtrackingParams_vocal.mat');% this was changed to vocal settings 
-
-s = load('color_pred_model_august.mat'); % the regular is ('color_pred_model_august.mat');
-color_pred_model = s.color_pred_model_august;
+s = load('trainedModel_newColors.mat'); % the regular is ('color_pred_model_august.mat');
+color_pred_model = s.trainedModel_newColors;
 
 fisheyeModel = load('fisheye_model.mat');
 cameraParams = fisheyeModel.cameraParams; % not needed, but...
