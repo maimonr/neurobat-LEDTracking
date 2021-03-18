@@ -4,13 +4,13 @@ varNames = gTruth.LabelData.Properties.VariableNames;
 trainingData= cell(size(gTruth.LabelData));
 frame_k = 1;
 minLum = 10;
-ab_averaging_method = 'weightedMean';
+ab_averaging_method = 'median';
 
 switch ab_averaging_method
     case 'median'
-        lab_avg_func = @(lab) median(lab(:,2:3));
+        lab_avg_func = @(lab) nanmedian(lab(:,2:3));
     case 'weightedMean'
-        lab_avg_func = @(lab) mean(lab(:,2:3).*rescale(lab(:,1)));
+        lab_avg_func = @(lab) nanmean(lab(:,2:3).*rescale(lab(:,1)));
 end
 
 
@@ -34,11 +34,15 @@ end
 
 idx = ~cellfun(@isempty,trainingData);
 trainingData_lab = cell(size(trainingData));
-trainingData_lab(idx) = cellfun(@rgb2lab,trainingData(idx),'UniformOutput',false);
+
+trainingData_lab(idx) = cellfun(@(frame) colorspace('Lab<-rgb',im2double(frame)),trainingData(idx),'UniformOutput',false);
+% trainingData_lab(idx) = cellfun(@rgb2lab,trainingData(idx),'UniformOutput',false);
+% trainingData_lab(idx) = cellfun(@rgb2hsv,trainingData(idx),'UniformOutput',false);
+
 trainingData_lab_thresh = cell(size(trainingData));
 for k = find(idx)'
     trainingData_lab_thresh{k} = reshape(trainingData_lab{k},[],3);
-    lumIdx = trainingData_lab_thresh{k}(:,1) > minLum;
+    lumIdx = trainingData_lab_thresh{k}(:,1) < minLum;
     trainingData_lab_thresh{k}(lumIdx,:) = NaN;
 end
 
