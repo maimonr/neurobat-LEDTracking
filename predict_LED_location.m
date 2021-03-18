@@ -46,14 +46,15 @@ end
     
 
 if isempty(color_pred_model)
-    try 
-        s = load('color_prediction_model');
-        color_pred_model = s.color_pred_model;
-    catch
-        [file,path] = uigetfile('*.mat','Select file containing color prediction model');
-        s = load(fullfile(path,file));
-        color_pred_model = s.color_pred_model;
-    end
+    [file,path] = uigetfile('*.mat','Select file containing color prediction model');
+    color_pred_model = load(fullfile(path,file));
+end
+
+switch color_pred_model.ab_averaging_method
+    case 'median'
+        lab_avg_func = @(lab) median(lab(:,2:3));
+    case 'weightedMean'
+        lab_avg_func = @(lab) mean(lab(:,2:3).*rescale(lab(:,1)));
 end
 
 if ~isempty(ROIIdx) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero. do this just once to save on performance
@@ -88,13 +89,13 @@ if ~isempty(regionLabels)
         regionRGB = f(regionIdx,:);
         regionLab = labFunc(regionRGB);
         regionLab = regionLab(regionLab(:,1) > minLum,:);
-        predLab(region_k,:) = squeeze(median(regionLab(:,2:3))); % take the median a and b values for those pixels
+        predLab(region_k,:) = squeeze(lab_avg_func(regionLab)); % take the median a and b values for those pixels
     end
     nanIdx = any(isnan(predLab),2);
     predLab = predLab(~nanIdx,:);
     centroidLocs = centroidLocs(~nanIdx,:);
     props = props(~nanIdx);
-    [predColors,predPosterior] = predict(color_pred_model,predLab); % predict which color based on median pixel a and b value
+    [predColors,predPosterior] = predict(color_pred_model.mdl,predLab); % predict which color based on median pixel a and b value
 else
     predColors = {};
     predPosterior = [];
