@@ -1,14 +1,21 @@
-function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates,LEDtrackingParams)
+function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates,LEDtrackingParams,varargin)
 
-s = load('trainedModel_newColors.mat'); % the regular is ('color_pred_model_august.mat');
-color_pred_model = s.trainedModel_newColors;
+pnames = {'groupStr','expType'};
+dflts  = {'','sst'};
+[groupStr,expType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
-fisheyeModel = load('fisheye_model.mat');
-cameraParams = fisheyeModel.cameraParams; % not needed, but...
+if ~isempty(groupStr) 
+    groupNum = groupStr(1);
+end
+
+color_pred_model = load(['color_pred_model_' expType '.mat']); 
+
+fisheyeModel = load(['fisheye_model_' expType '.mat']);
+cameraParams = fisheyeModel.cameraParams;
 
 for exp_k = 1:length(expDates)
     exp_date_str = datestr(expDates(exp_k),'mmddyyyy');
-    remote_video_dir = fullfile(baseDir,exp_date_str,'video',sessionType,'color','*.mp4');
+    remote_video_dir = fullfile(baseDir,exp_date_str,'video',[sessionType groupNum],'color','*.mp4');
     local_video_dir = fullfile(localDir,exp_date_str);
     [status,copy_err_msg] = remote_copy(remote_video_dir,local_video_dir);
     if ~status
@@ -18,7 +25,7 @@ for exp_k = 1:length(expDates)
     
     LEDTracks = batch_process_LED_tracking(local_video_dir,LEDtrackingParams,cameraParams,color_pred_model,sessionType);
     
-    outFname = fullfile(saveFolder,strjoin({'LEDtracking_pred',sessionType,exp_date_str},'_'));
+    outFname = fullfile(saveFolder,strjoin({'LEDtracking_pred',[sessionType groupStr],exp_date_str},'_'));
     save(outFname,'-struct','LEDTracks')
     [rmdir_status, rmdir_err_msg] = rmdir(local_video_dir,'s');
     if ~rmdir_status
