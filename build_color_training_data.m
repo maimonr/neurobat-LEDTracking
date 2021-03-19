@@ -22,8 +22,9 @@ lastFrame = find(~all(emptyLabels,2),1,'last');
 while hasFrame(v) && frame_k <= lastFrame
     f = readFrame(v);
     for color_k = 1:length(varNames)
-        if ~isempty(gTruth.LabelData{frame_k,color_k}{1})
-            coords = round(mean(gTruth.LabelData{frame_k,color_k}{1},1));
+        currentCoord = gTruth.LabelData{frame_k,color_k}{1};
+        if ~isempty(currentCoord) && ~isstruct(currentCoord)
+            coords = round(mean(currentCoord,1));
             roiIdx = {coords(1):coords(1)+coords(3);coords(2):coords(2)+coords(4)};
             trainingData{frame_k,color_k} = f(roiIdx{2},roiIdx{1},:);
         end
