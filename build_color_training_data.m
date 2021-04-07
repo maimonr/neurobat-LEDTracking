@@ -4,6 +4,7 @@ varNames = gTruth.LabelData.Properties.VariableNames;
 trainingData= cell(size(gTruth.LabelData));
 frame_k = 1;
 minLum = 10;
+maxLum = 100;
 ab_averaging_method = 'median';
 
 switch ab_averaging_method
@@ -11,6 +12,8 @@ switch ab_averaging_method
         lab_avg_func = @(lab) nanmedian(lab(:,2:3));
     case 'weightedMean'
         lab_avg_func = @(lab) nanmean(lab(:,2:3).*rescale(lab(:,1)));
+    case 'allPixels'
+        lab_avg_func = @(lab) lab(~any(isnan(lab),2),2:3);
 end
 
 
@@ -43,19 +46,22 @@ trainingData_lab(idx) = cellfun(@(frame) colorspace('Lab<-rgb',im2double(frame))
 trainingData_lab_thresh = cell(size(trainingData));
 for k = find(idx)'
     trainingData_lab_thresh{k} = reshape(trainingData_lab{k},[],3);
-    lumIdx = trainingData_lab_thresh{k}(:,1) < minLum;
+    L = trainingData_lab_thresh{k}(:,1) ;
+    lumIdx = L < minLum | L > maxLum;
     trainingData_lab_thresh{k}(lumIdx,:) = NaN;
 end
-
+%%
 color_training_label = {};
 color_training_mat = [];
 for color_k = 1:size(trainingData,2)
     idx = ~cellfun(@isempty,trainingData_lab_thresh(:,color_k));
     color_training_data = cellfun(@(lab) lab_avg_func(lab),trainingData_lab_thresh(idx,color_k),'un',0);
-    color_training_mat = [color_training_mat; vertcat(color_training_data{:})];
-    color_training_label = [color_training_label;repmat(varNames(color_k),sum(idx),1)];
+    current_training_mat = vertcat(color_training_data{:});
+    color_training_mat = [color_training_mat; current_training_mat];
+    color_training_label = [color_training_label;repmat(varNames(color_k),size(current_training_mat,1),1)];
 end
 
 trainingData = [num2cell(color_training_mat) color_training_label];
 trainingTable = cell2table(trainingData,'VariableNames',{'a','b','color'});
+%%
 end
