@@ -1,4 +1,4 @@
-function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates,LEDtrackingParams,varargin)
+function  batchDir_LED_tracking(baseDir,saveFolder,localDir,sessionType,expDates,LEDtrackingParams,color_pred_model,varargin)
 
 pnames = {'groupStr','expType'};
 dflts  = {'','sst'};
@@ -7,8 +7,6 @@ dflts  = {'','sst'};
 if ~isempty(groupStr) 
     groupNum = groupStr(1);
 end
-
-color_pred_model = load(['color_pred_model_' expType '.mat']); 
 
 fisheyeModel = load(['fisheye_model_' expType '.mat']);
 cameraParams = fisheyeModel.cameraParams;
