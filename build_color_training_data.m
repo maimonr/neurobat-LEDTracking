@@ -1,11 +1,13 @@
-function trainingTable = build_color_training_data(gTruth)
+function trainingTable = build_color_training_data(gTruth,varargin)
+
+pnames = {'minLum','maxLum','ab_averaging_method'};
+dflts  = {10,100,'allPixels'};
+[minLum,maxLum,ab_averaging_method] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+
 v = VideoReader(gTruth.DataSource.Source);
 varNames = gTruth.LabelData.Properties.VariableNames;
 trainingData= cell(size(gTruth.LabelData));
 frame_k = 1;
-minLum = 10;
-maxLum = 100;
-ab_averaging_method = 'median';
 
 switch ab_averaging_method
     case 'median'
@@ -64,4 +66,6 @@ end
 trainingData = [num2cell(color_training_mat) color_training_label];
 trainingTable = cell2table(trainingData,'VariableNames',{'a','b','color'});
 %%
+
+close(waitH)
 end

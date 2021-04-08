@@ -50,12 +50,9 @@ if isempty(color_pred_model)
     color_pred_model = load(fullfile(path,file));
 end
 
-switch color_pred_model.ab_averaging_method
-    case 'median'
-        lab_avg_func = @(lab) median(lab(:,2:3));
-    case 'weightedMean'
-        lab_avg_func = @(lab) mean(lab(:,2:3).*rescale(lab(:,1)));
-end
+
+lab_avg_func = @(lab) median(lab(:,2:3));
+
 
 if ~isempty(ROIIdx) % If no ROI is defined, use entire image, otherwise set values outside of ROI to zero. do this just once to save on performance
     ROI = true(size(f));
