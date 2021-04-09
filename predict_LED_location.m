@@ -92,7 +92,7 @@ if ~isempty(regionLabels)
     predLab = predLab(~nanIdx,:);
     centroidLocs = centroidLocs(~nanIdx,:);
     props = props(~nanIdx);
-    [predColors,predPosterior] = predict(color_pred_model.mdl,predLab); % predict which color based on median pixel a and b value
+    [predColors,predPosterior] = predict(color_pred_model,predLab); % predict which color based on median pixel a and b value
 else
     predColors = {};
     predPosterior = [];
