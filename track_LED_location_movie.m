@@ -7,14 +7,14 @@ nChunk = length(frameChunks)-1;
 
 [centroidLocs, predColors, props, predPosterior] = deal(cell(1,v.NumFrames ));
 ROIIdx(1,:) = [35 1060 80 1420];
-s = load('color_prediction_model');
-color_pred_model = s.color_pred_model;
+s = load('color_pred_model_10color'); %load('color_prediction_model');
+%color_pred_model = s.color_pred_model;
 t = tic;
 
 if ~process_by_chunk
     for frame_k = 1:v.NumFrames
         f = readFrame(v);
-        [centroidLocs{frame_k}, predColors{frame_k}, props{frame_k}, predPosterior{frame_k}] = predict_LED_location(f,'ROI',ROIIdx,'color_pred_model',color_pred_model);
+        [centroidLocs{frame_k}, predColors{frame_k}, props{frame_k}, predPosterior{frame_k}] = predict_LED_location(f,'ROI',ROIIdx,'color_pred_model',s);%color_pred_model);
     end
 else
     waitF = waitbar(0,'Initializing');
